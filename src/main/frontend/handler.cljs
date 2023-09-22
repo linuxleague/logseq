@@ -212,6 +212,12 @@
   (get-system-info)
   (set-global-error-notification!)
 
+  (let [
+        ;; base-url (str js/window.location.protocol "//" js/window.location.host)
+        worker (js/Worker. "/js/db-worker.js")]
+    (.. worker (addEventListener "message" (fn [e] (js/console.log e))))
+    (.. worker (postMessage "hello world")))
+
   (set! js/window.onhashchange #(state/hide-custom-context-menu!)) ;; close context menu when page navs
   (register-components-fns!)
   (user-handler/restore-tokens-from-localstorage)

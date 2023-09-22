@@ -27,7 +27,7 @@
                         {:entries    [frontend.extensions.tldraw]
                          :depends-on #{:main}}
                         :db-worker
-                        {:entries    [frontend.worker]
+                        {:init-fn    frontend.worker/init
                          :web-worker true
                          :depends-on #{:shared}}}
 
