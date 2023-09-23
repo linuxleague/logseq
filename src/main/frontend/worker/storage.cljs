@@ -1,6 +1,5 @@
 (ns frontend.worker.storage
-  (:require [datascript.core :as d]
-            [datascript.storage :refer [IStorage]]
+  (:require [datascript.storage :refer [IStorage]]
             [clojure.edn :as edn]))
 
 (defn sqlite-storage
