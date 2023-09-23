@@ -27,18 +27,19 @@
    (p/let [sqlite (sqlite3InitModule (clj->js {:url (str base-url "/js/sqlite-wasm/")
                                                :print js/console.log
                                                :printErr js/console.error}))
-           pool (.installOpfsSAHPoolVfs sqlite #js {:name "debug-db"
-                                                    :initialCapacity 3
-                                                    :clearOnInit true
-                                                    :verbosity 2})
-           db (.OpfsSAHPoolDb pool "/logseq-opfs-pool.db")]
-     (println :debug :sqlite)
-     (js/console.dir sqlite)
+           pool (.installOpfsSAHPoolVfs sqlite #js {;; :name "debug-db"
+                                                    ;; :initialCapacity 3
+                                                    ;; :verbosity 2
+                                                    })
+           db (new (.-OpfsSAHPoolDb pool) "/sqlite-test")]
      (println :debug :pool)
      (js/console.dir pool)
-     (prn "opfs-sahpool successfully installed")
      (println :debug :db)
-     (js/console.dir db))
+     (js/console.dir db)
+     (prn "opfs-sahpool successfully installed")
+     (.exec db "PRAGMA locking_mode=exclusive")
+     (.exec db "drop table if exists kvs"))
+
    (p/catch (fn [error]
               (js/console.error error)))))
 
