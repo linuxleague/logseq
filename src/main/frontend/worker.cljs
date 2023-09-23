@@ -1,5 +1,7 @@
 (ns frontend.worker
   (:require ["@sqlite.org/sqlite-wasm" :as wasm]
+            [frontend.worker.storage :as storage]
+            [datascript.core :as d]
             [promesa.core :as p]))
 
 (def sqlite3InitModule (.-default wasm))
@@ -31,22 +33,16 @@
            pool (.installOpfsSAHPoolVfs sqlite #js {:name "debug-db"
                                                     :initialCapacity 3
                                                     :verbosity 2})
-           db (new (.-OpfsSAHPoolDb pool) "/sqlite-test")]
-     (reset! *debug-db db)
-     (println :debug :pool)
-     (js/console.dir pool)
-     (println :debug :db)
-     (js/console.dir db)
-     (prn "opfs-sahpool successfully installed")
+           db (new (.-OpfsSAHPoolDb pool) "/sqlite-test")
+           storage (storage/sqlite-storage db nil)]
      (.exec db "PRAGMA locking_mode=exclusive")
      (.exec db "create table if not exists kvs (addr INTEGER primary key, content TEXT)")
-     (.exec db "insert into kvs (addr, content) values (1, 'test') ")
-     (.exec db "insert into kvs (addr, content) values (2, 'test') ")
-     (let [result (.exec db
-                         #js {:sql "select * from kvs"
-                              :rowMode "array"})]
-       (prn "Query result:")
-       (js/console.dir result)))
+     (let [conn (or (d/restore-conn storage)
+                    (d/create-conn nil {:storage storage}))]
+       (prn "(Before transact) Entity 10 data: " (:data (d/entity @conn 10)))
+       (d/transact! conn [{:db/id 10
+                           :data 1}])
+       (prn "Entity 10 data: " (:data (d/entity @conn 10)))))
 
    (p/catch (fn [error]
               (js/console.error error)))))
