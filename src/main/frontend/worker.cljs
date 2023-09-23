@@ -21,34 +21,38 @@
    (p/catch (fn [error]
               (js/console.error error)))))
 
+(defonce *debug-db (atom nil))
 (defn- opfs-pool-test
   []
   (->
    (p/let [sqlite (sqlite3InitModule (clj->js {:url (str base-url "/js/sqlite-wasm/")
                                                :print js/console.log
                                                :printErr js/console.error}))
-           pool (.installOpfsSAHPoolVfs sqlite #js {;; :name "debug-db"
-                                                    ;; :initialCapacity 3
-                                                    ;; :verbosity 2
-                                                    })
+           pool (.installOpfsSAHPoolVfs sqlite #js {:name "debug-db"
+                                                    :initialCapacity 3
+                                                    :verbosity 2})
            db (new (.-OpfsSAHPoolDb pool) "/sqlite-test")]
+     (reset! *debug-db db)
      (println :debug :pool)
      (js/console.dir pool)
      (println :debug :db)
      (js/console.dir db)
      (prn "opfs-sahpool successfully installed")
      (.exec db "PRAGMA locking_mode=exclusive")
-     (.exec db "drop table if exists kvs"))
+     (.exec db "create table if not exists kvs (addr INTEGER primary key, content TEXT)")
+     (.exec db "insert into kvs (addr, content) values (1, 'test') ")
+     (.exec db "insert into kvs (addr, content) values (2, 'test') ")
+     (let [result (.exec db
+                         #js {:sql "select * from kvs"
+                              :rowMode "array"})]
+       (prn "Query result:")
+       (js/console.dir result)))
 
    (p/catch (fn [error]
               (js/console.error error)))))
 
-
-(do
-  (prn :debug "test opfs pool")
-  (opfs-pool-test))
-
 (defn init []
+  (opfs-pool-test)
   (js/self.addEventListener "message"
                             (fn [^js e]
                               (prn "Received data: " (.. e -data))
